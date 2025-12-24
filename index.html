@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visual Therapy Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #setupScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        #setupScreen.hidden {
+            display: none;
+        }
+        .setup-container {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        .setup-container h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #00ff00;
+        }
+        .instructions {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .instructions p {
+            font-size: 14px;
+            line-height: 1.8;
+            margin: 5px 0;
+        }
+        #startBtn {
+            margin-top: 20px;
+            padding: 20px 60px;
+            font-size: 24px;
+            cursor: pointer;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        #startBtn:hover {
+            background: #00cc00;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+        }
+        #stats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            background: rgba(0,0,0,0.8);
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            z-index: 10;
+        }
+        #levelComplete {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 30px;
+            border-radius: 10px;
+            border: 3px solid #00ff00;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            max-width: 500px;
+            width: 90%;
+        }
+        #sessionComplete {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.98);
+            padding: 20px;
+            border-radius: 10px;
+            border: 3px solid #ffaa00;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            max-width: 700px;
+            width: 95%;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        .complete-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #00ff00;
+        }
+        .complete-info {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .results-table {
+            margin: 15px auto;
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #00ff00;
+        }
+        .results-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin: 5px 0;
+            background: #2a2a2a;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .results-label {
+            color: #aaa;
+            font-weight: bold;
+        }
+        .results-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .level-times-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .level-time-box {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .screenshot-instruction {
+            margin: 15px 0;
+            padding: 15px;
+            background: #ff6600;
+            color: #000;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button.continue-btn {
+            margin-top: 15px;
+            padding: 15px 40px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        button.continue-btn:active {
+            background: #0052cc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Setup Screen -->
+    <div id="setupScreen">
+        <div class="setup-container">
+            <h1>🎮 Visual Therapy Game 🎮</h1>
+            
+            <div class="instructions">
+                <p><strong>📋 HOW TO PLAY:</strong></p>
+                <p>🔴 <strong>Catch LARGE RED balls</strong> = +10 points</p>
+                <p>⚠️ <strong>Avoid small balls</strong> (red/blue) = -8 points</p>
+                <p>🎯 Reach the target score to advance</p>
+                <p>⏱️ Complete all 10 levels</p>
+                <p></p>
+                <p><strong>🎮 CONTROLS:</strong></p>
+                <p>🖱️ <strong>Mouse:</strong> Move to control basket</p>
+                <p>⌨️ <strong>Keyboard:</strong> Arrow Keys or A/D</p>
+                <p>📱 <strong>Mobile:</strong> Touch and drag</p>
+                <p></p>
+                <p><strong>⚠️ IMPORTANT:</strong></p>
+                <p>📸 Take screenshot of final results!</p>
+            </div>
+            
+            <button id="startBtn">START GAME</button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Stats Display -->
+    <div id="stats">
+        <div>Level: <span id="level">1</span> / 10</div>
+        <div>Score: <span id="score">0</span> / <span id="levelTarget">100</span></div>
+        <div>Time: <span id="time">0</span>s</div>
+        <div>Accuracy: <span id="accuracy">0</span>%</div>
+    </div>
+
+    <!-- Level Complete -->
+    <div id="levelComplete">
+        <div class="complete-title">✅ Level Complete!</div>
+        <div class="complete-info">Time: <span id="levelTime">0</span>s</div>
+        <div class="complete-info">Accuracy: <span id="levelAccuracy">0</span>%</div>
+        <button class="continue-btn" onclick="nextLevel()">Continue to Next Level</button>
+    </div>
+
+    <!-- Session Complete -->
+    <div id="sessionComplete"></div>
+
+    <script>
+        // Setup
+        const startBtn = document.getElementById('startBtn');
+        const setupScreen = document.getElementById('setupScreen');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Make canvas fill screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        startBtn.addEventListener('click', () => {
+            setupScreen.classList.add('hidden');
+            startGame();
+        });
+
+        // Game State
+        let gameState = {
+            running: false,
+            level: 1,
+            score: 0,
+            time: 0,
+            hits: 0,
+            misses: 0,
+            levelStartTime: 0,
+            totalStartTime: 0,
+            levelTimes: [],
+            levelAccuracies: [],
+            levelHits: [],
+            levelMisses: []
+        };
+
+        // Level Configuration - Progressive difficulty
+        const LEVEL_CONFIG = {
+            1: { target: 100, contrast: 0.7, largeBallSize: 28, smallBallSize: 9, speed: 3.0, spawnRate: 650 },
+            2: { target: 100, contrast: 0.65, largeBallSize: 27, smallBallSize: 9, speed: 3.3, spawnRate: 600 },
+            3: { target: 100, contrast: 0.6, largeBallSize: 26, smallBallSize: 9, speed: 3.6, spawnRate: 550 },
+            4: { target: 150, contrast: 0.55, largeBallSize: 25, smallBallSize: 9, speed: 4.0, spawnRate: 500 },
+            5: { target: 150, contrast: 0.5, largeBallSize: 24, smallBallSize: 10, speed: 4.4, spawnRate: 450 },
+            6: { target: 150, contrast: 0.48, largeBallSize: 23, smallBallSize: 10, speed: 4.8, spawnRate: 420 },
+            7: { target: 200, contrast: 0.45, largeBallSize: 22, smallBallSize: 10, speed: 5.2, spawnRate: 400 },
+            8: { target: 200, contrast: 0.42, largeBallSize: 21, smallBallSize: 10, speed: 5.6, spawnRate: 380 },
+            9: { target: 200, contrast: 0.4, largeBallSize: 20, smallBallSize: 11, speed: 6.0, spawnRate: 360 },
+            10: { target: 250, contrast: 0.5, largeBallSize: 20, smallBallSize: 11, speed: 6.5, spawnRate: 340 }
+        };
+
+        const basket = {
+            x: 0,
+            y: 0,
+            width: 65,
+            height: 28,
+            speed: 8
+        };
+
+        const balls = [];
+        const keys = {};
+
+        function getLevelConfig() {
+            return LEVEL_CONFIG[gameState.level];
+        }
+
+        function createBall(type) {
+            const config = getLevelConfig();
+            const radius = type === 'large' ? config.largeBallSize : config.smallBallSize;
+            
+            return {
+                x: Math.random() * (canvas.width - radius * 2) + radius,
+                y: -radius,
+                radius: radius,
+                type: type,
+                speed: config.speed + Math.random() * 1.5,
+                color: type === 'large' ? '#ff0000' : (Math.random() < 0.5 ? '#ff0000' : '#0000ff'),
+                points: type === 'large' ? 10 : -8
+            };
+        }
+
+        function drawBasket() {
+            ctx.strokeStyle = '#0000ff';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(basket.x - basket.width/2, basket.y - basket.height/2);
+            ctx.lineTo(basket.x - basket.width/2, basket.y + basket.height/2);
+            ctx.lineTo(basket.x + basket.width/2, basket.y + basket.height/2);
+            ctx.lineTo(basket.x + basket.width/2, basket.y - basket.height/2);
+            ctx.stroke();
+        }
+
+        function drawBall(ball) {
+            const config = getLevelConfig();
+            
+            // Apply contrast based on ball type
+            if (ball.type === 'large') {
+                ctx.globalAlpha = config.contrast;
+            } else {
+                ctx.globalAlpha = config.contrast;
+            }
+            
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+
+        function checkCollision(ball) {
+            const ballBottom = ball.y + ball.radius;
+            const ballTop = ball.y - ball.radius;
+            const basketTop = basket.y - basket.height/2;
+            const basketBottom = basket.y + basket.height/2;
+            
+            if (ballBottom < basketTop || ballTop > basketBottom) {
+                return false;
+            }
+            
+            const ballCenterX = ball.x;
+            const basketLeft = basket.x - basket.width/2;
+            const basketRight = basket.x + basket.width/2;
+            
+            const tolerance = ball.radius * 0.7;
+            const effectiveLeft = basketLeft + tolerance;
+            const effectiveRight = basketRight - tolerance;
+            
+            return (ballCenterX >= effectiveLeft) && (ballCenterX <= effectiveRight);
+        }
+
+        function updateBalls() {
+            for (let i = balls.length - 1; i >= 0; i--) {
+                const ball = balls[i];
+                ball.y += ball.speed;
+                
+                if (checkCollision(ball)) {
+                    if (ball.type === 'large') {
+                        gameState.score += 10;
+                        gameState.hits++;
+                    } else {
+                        gameState.score = Math.max(0, gameState.score - 8);
+                        gameState.misses++;
+                    }
+                    
+                    balls.splice(i, 1);
+                    updateDisplay();
+                    checkLevelComplete();
+                    continue;
+                }
+                
+                if (ball.y > canvas.height + 50) {
+                    if (ball.type === 'large') {
+                        gameState.misses++;
+                    }
+                    balls.splice(i, 1);
+                }
+            }
+        }
+
+        function updateBasket() {
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                basket.x = Math.max(basket.width/2 + 5, basket.x - basket.speed);
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                basket.x = Math.min(canvas.width - basket.width/2 - 5, basket.x + basket.speed);
+            }
+        }
+
+        function checkLevelComplete() {
+            const config = getLevelConfig();
+            if (gameState.score >= config.target) {
+                completeLevel();
+            }
+        }
+
+        function completeLevel() {
+            gameState.running = false;
+            const levelTime = ((Date.now() - gameState.levelStartTime) / 1000).toFixed(1);
+            
+            const levelAccuracy = gameState.hits + gameState.misses > 0 
+                ? Math.round((gameState.hits / (gameState.hits + gameState.misses)) * 100) 
+                : 0;
+            
+            gameState.levelTimes.push(parseFloat(levelTime));
+            gameState.levelAccuracies.push(levelAccuracy);
+            gameState.levelHits.push(gameState.hits);
+            gameState.levelMisses.push(gameState.misses);
+            
+            document.getElementById('levelTime').textContent = levelTime;
+            document.getElementById('levelAccuracy').textContent = levelAccuracy;
+            document.getElementById('levelComplete').style.display = 'block';
+        }
+
+        function nextLevel() {
+            document.getElementById('levelComplete').style.display = 'none';
+            
+            if (gameState.level >= 10) {
+                completeSession();
+                return;
+            }
+            
+            gameState.level++;
+            gameState.score = 0;
+            gameState.hits = 0;
+            gameState.misses = 0;
+            
+            gameState.levelStartTime = Date.now();
+            balls.length = 0;
+            lastSpawnTime = Date.now();
+            gameState.running = true;
+            updateDisplay();
+            
+            gameLoop();
+        }
+
+        function completeSession() {
+            const totalTime = ((Date.now() - gameState.totalStartTime) / 1000);
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = (totalTime % 60).toFixed(1);
+            
+            let sumWeightedAccuracy = 0;
+            let sumWeights = 0;
+            
+            for (let i = 0; i < gameState.levelAccuracies.length; i++) {
+                const weight = i + 1;
+                sumWeightedAccuracy += gameState.levelAccuracies[i] * weight;
+                sumWeights += weight;
+            }
+            
+            const weightedTotalAccuracy = Math.round(sumWeightedAccuracy / sumWeights);
+            const totalHits = gameState.levelHits.reduce((sum, hits) => sum + hits, 0);
+            const totalMisses = gameState.levelMisses.reduce((sum, misses) => sum + misses, 0);
+            
+            let levelTimesHTML = '<div class="level-times-grid">';
+            for (let i = 0; i < gameState.levelTimes.length; i++) {
+                levelTimesHTML += `
+                    <div class="level-time-box">
+                        <div style="color: #888; font-size: 11px;">L${i+1}</div>
+                        <div style="color: #00ff00; font-weight: bold;">${gameState.levelTimes[i]}s</div>
+                        <div style="color: #ffaa00; font-size: 11px;">Acc: ${gameState.levelAccuracies[i]}%</div>
+                    </div>
+                `;
+            }
+            levelTimesHTML += '</div>';
+            
+            document.getElementById('sessionComplete').innerHTML = `
+                <div class="complete-title">🎯 SESSION COMPLETE! 🎯</div>
+                
+                <div class="screenshot-instruction">
+                    📸 TAKE SCREENSHOT NOW 📸<br>
+                    Send this to the researcher
+                </div>
+                
+                <div class="results-table">
+                    <h2 style="color: #ffaa00; margin-bottom: 10px; font-size: 20px;">📊 YOUR RESULTS</h2>
+                    
+                    <div class="results-row">
+                        <span class="results-label">Session Time:</span>
+                        <span class="results-value">${minutes}m ${seconds}s</span>
+                    </div>
+                    
+                    <div class="results-row" style="background: #3a3a00; border: 2px solid #ffaa00;">
+                        <span class="results-label">Total Accuracy:</span>
+                        <span class="results-value" style="color: #ffaa00; font-size: 18px;">${weightedTotalAccuracy}%</span>
+                    </div>
+                    
+                    <div class="results-row">
+                        <span class="results-label">Total Hits:</span>
+                        <span class="results-value">${totalHits}</span>
+                    </div>
+                    
+                    <div class="results-row">
+                        <span class="results-label">Total Misses:</span>
+                        <span class="results-value">${totalMisses}</span>
+                    </div>
+                    
+                    <div class="results-row">
+                        <span class="results-label">Levels Done:</span>
+                        <span class="results-value">10 / 10 ✅</span>
+                    </div>
+                    
+                    <h3 style="color: #00ff00; margin-top: 15px; margin-bottom: 8px; font-size: 16px;">⏱️ Level Performance:</h3>
+                    ${levelTimesHTML}
+                    
+                    <div style="margin-top: 10px; padding: 8px; background: #2a2a00; border-radius: 5px; font-size: 11px; color: #ffaa00;">
+                        <strong>Weighted Accuracy:</strong> Later levels count more (Level 10 = 10× weight)
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #1a4d1a; border-radius: 5px; font-size: 14px;">
+                    <strong>Thank you for participating! 🎮</strong>
+                </div>
+                
+                <button class="continue-btn" onclick="location.reload()" style="background: #00cc00;">🔄 PLAY AGAIN</button>
+            `;
+            
+            document.getElementById('sessionComplete').style.display = 'block';
+        }
+
+        function updateDisplay() {
+            const config = getLevelConfig();
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('levelTarget').textContent = config.target;
+            document.getElementById('time').textContent = Math.floor((Date.now() - gameState.levelStartTime) / 1000);
+            const accuracy = gameState.hits + gameState.misses > 0 
+                ? Math.round((gameState.hits / (gameState.hits + gameState.misses)) * 100) 
+                : 0;
+            document.getElementById('accuracy').textContent = accuracy;
+        }
+
+        function gameLoop() {
+            if (!gameState.running) return;
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            updateBasket();
+            updateBalls();
+            
+            drawBasket();
+            balls.forEach(ball => drawBall(ball));
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        let lastSpawnTime = Date.now();
+        function spawnBalls() {
+            if (!gameState.running) {
+                requestAnimationFrame(spawnBalls);
+                return;
+            }
+            
+            const now = Date.now();
+            const config = getLevelConfig();
+            
+            if (now - lastSpawnTime > config.spawnRate) {
+                const type = Math.random() < 0.35 ? 'large' : 'small';
+                balls.push(createBall(type));
+                
+                if (Math.random() < 0.4) {
+                    balls.push(createBall('small'));
+                }
+                
+                lastSpawnTime = now;
+            }
+            
+            requestAnimationFrame(spawnBalls);
+        }
+
+        // Controls
+        window.addEventListener('keydown', (e) => { 
+            keys[e.key] = true;
+            e.preventDefault();
+        });
+        window.addEventListener('keyup', (e) => { 
+            keys[e.key] = false;
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState.running) {
+                basket.x = e.clientX;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState.running) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                basket.x = touch.clientX;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState.running) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                basket.x = touch.clientX;
+            }
+        }, { passive: false });
+
+        setInterval(() => {
+            if (gameState.running) updateDisplay();
+        }, 100);
+
+        function startGame() {
+            basket.x = canvas.width / 2;
+            basket.y = canvas.height - 60;
+            
+            gameState.running = true;
+            gameState.levelStartTime = Date.now();
+            gameState.totalStartTime = Date.now();
+            updateDisplay();
+            gameLoop();
+            spawnBalls();
+        }
+    </script>
+</body>
+</html>
