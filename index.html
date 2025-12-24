@@ -277,17 +277,28 @@
             levelMisses: []
         };
 
-        // Make canvas fill screen - Define AFTER gameState
+        // Define basket object BEFORE resizeCanvas
+        const basket = {
+            x: 0,
+            y: 0,
+            width: 65,
+            height: 28,
+            speed: 8
+        };
+
+        const balls = [];
+        const keys = {};
+
+        // Make canvas fill screen - Define AFTER gameState and basket
         function resizeCanvas() {
             // Use innerHeight for better mobile browser compatibility
             const safeHeight = window.innerHeight;
             canvas.width = window.innerWidth;
             canvas.height = safeHeight;
             
-            // Reposition basket if game is running
-            if (gameState && gameState.running) {
-                basket.y = canvas.height - 120;
-            }
+            // Always reposition basket based on current canvas height
+            // Use percentage-based positioning for consistency across devices
+            basket.y = canvas.height * 0.85; // 85% down from top
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -311,17 +322,6 @@
             9: { target: 200, contrast: 0.4, largeBallSize: 20, smallBallSize: 11, speed: 6.0, spawnRate: 360 },
             10: { target: 250, contrast: 0.5, largeBallSize: 20, smallBallSize: 11, speed: 6.5, spawnRate: 340 }
         };
-
-        const basket = {
-            x: 0,
-            y: 0,
-            width: 65,
-            height: 28,
-            speed: 8
-        };
-
-        const balls = [];
-        const keys = {};
 
         function getLevelConfig() {
             return LEVEL_CONFIG[gameState.level];
@@ -640,7 +640,7 @@
 
         function startGame() {
             basket.x = canvas.width / 2;
-            basket.y = canvas.height - 120;
+            basket.y = canvas.height * 0.85; // Use percentage for consistency
             
             gameState.running = true;
             gameState.levelStartTime = Date.now();
