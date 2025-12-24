@@ -286,7 +286,7 @@
             
             // Reposition basket if game is running
             if (gameState && gameState.running) {
-                basket.y = canvas.height - 100;
+                basket.y = canvas.height - 120;
             }
         }
         resizeCanvas();
@@ -640,7 +640,7 @@
 
         function startGame() {
             basket.x = canvas.width / 2;
-            basket.y = canvas.height - 100;
+            basket.y = canvas.height - 120;
             
             gameState.running = true;
             gameState.levelStartTime = Date.now();
