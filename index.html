@@ -16,6 +16,11 @@
             font-family: Arial, sans-serif;
             overflow: hidden;
             touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
         #setupScreen {
             position: fixed;
@@ -79,6 +84,9 @@
             width: 100vw;
             height: 100vh;
             touch-action: none;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
         #stats {
             position: fixed;
@@ -253,20 +261,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Make canvas fill screen
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        startBtn.addEventListener('click', () => {
-            setupScreen.classList.add('hidden');
-            startGame();
-        });
-
-        // Game State
+        // Game State - Initialize FIRST
         let gameState = {
             running: false,
             level: 1,
@@ -281,6 +276,27 @@
             levelHits: [],
             levelMisses: []
         };
+
+        // Make canvas fill screen - Define AFTER gameState
+        function resizeCanvas() {
+            // Use innerHeight for better mobile browser compatibility
+            const safeHeight = window.innerHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = safeHeight;
+            
+            // Reposition basket if game is running
+            if (gameState && gameState.running) {
+                basket.y = canvas.height - 100;
+            }
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', resizeCanvas);
+
+        startBtn.addEventListener('click', () => {
+            setupScreen.classList.add('hidden');
+            startGame();
+        });
 
         // Level Configuration - Progressive difficulty
         const LEVEL_CONFIG = {
