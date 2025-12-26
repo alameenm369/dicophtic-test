@@ -104,6 +104,84 @@
         #stats > div {
             margin: 1px 0;
         }
+        #controls {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .control-btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid;
+            border-radius: 5px;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            transition: all 0.2s;
+        }
+        .control-btn.pause {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        .control-btn.pause:active {
+            background: #ffaa00;
+            color: #000;
+        }
+        .control-btn.restart {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        .control-btn.restart:active {
+            background: #ff4444;
+            color: #000;
+        }
+        #restartConfirm {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 25px;
+            border-radius: 10px;
+            border: 3px solid #ff4444;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            max-width: 400px;
+            width: 90%;
+        }
+        #restartConfirm h3 {
+            color: #ff4444;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+        #restartConfirm p {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        #restartConfirm button {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            margin: 0 8px;
+        }
+        #restartConfirm .confirm-yes {
+            background: #ff4444;
+            color: #000;
+        }
+        #restartConfirm .confirm-no {
+            background: #666;
+            color: #fff;
+        }
         #levelComplete {
             position: fixed;
             top: 50%;
@@ -243,6 +321,12 @@
         <div>Accuracy: <span id="accuracy">0</span>%</div>
     </div>
 
+    <!-- Control Buttons -->
+    <div id="controls">
+        <button class="control-btn pause" onclick="togglePause()">⏸ PAUSE</button>
+        <button class="control-btn restart" onclick="confirmRestart()">🔄 RESTART</button>
+    </div>
+
     <!-- Level Complete -->
     <div id="levelComplete">
         <div class="complete-title">✅ Level Complete!</div>
@@ -254,6 +338,14 @@
     <!-- Session Complete -->
     <div id="sessionComplete"></div>
 
+    <!-- Restart Confirmation Dialog -->
+    <div id="restartConfirm">
+        <h3>⚠️ Restart Game?</h3>
+        <p>Your current progress will be lost.<br>Start from Level 1?</p>
+        <button class="confirm-yes" onclick="doRestart()">YES, RESTART</button>
+        <button class="confirm-no" onclick="cancelRestart()">NO, CONTINUE</button>
+    </div>
+
     <script>
         // Setup
         const startBtn = document.getElementById('startBtn');
@@ -264,6 +356,7 @@
         // Game State - Initialize FIRST
         let gameState = {
             running: false,
+            paused: false,
             level: 1,
             score: 0,
             time: 0,
@@ -271,6 +364,8 @@
             misses: 0,
             levelStartTime: 0,
             totalStartTime: 0,
+            pausedTime: 0,
+            pauseStartTime: 0,
             levelTimes: [],
             levelAccuracies: [],
             levelHits: [],
@@ -309,18 +404,18 @@
             startGame();
         });
 
-        // Level Configuration - Progressive difficulty
+        // Level Configuration - Progressive difficulty with increasing basket size
         const LEVEL_CONFIG = {
-            1: { target: 100, contrast: 0.7, largeBallSize: 28, smallBallSize: 9, speed: 3.0, spawnRate: 650 },
-            2: { target: 100, contrast: 0.65, largeBallSize: 27, smallBallSize: 9, speed: 3.3, spawnRate: 600 },
-            3: { target: 100, contrast: 0.6, largeBallSize: 26, smallBallSize: 9, speed: 3.6, spawnRate: 550 },
-            4: { target: 150, contrast: 0.55, largeBallSize: 25, smallBallSize: 9, speed: 4.0, spawnRate: 500 },
-            5: { target: 150, contrast: 0.5, largeBallSize: 24, smallBallSize: 10, speed: 4.4, spawnRate: 450 },
-            6: { target: 150, contrast: 0.48, largeBallSize: 23, smallBallSize: 10, speed: 4.8, spawnRate: 420 },
-            7: { target: 200, contrast: 0.45, largeBallSize: 22, smallBallSize: 10, speed: 5.2, spawnRate: 400 },
-            8: { target: 200, contrast: 0.42, largeBallSize: 21, smallBallSize: 10, speed: 5.6, spawnRate: 380 },
-            9: { target: 200, contrast: 0.4, largeBallSize: 20, smallBallSize: 11, speed: 6.0, spawnRate: 360 },
-            10: { target: 250, contrast: 0.5, largeBallSize: 20, smallBallSize: 11, speed: 6.5, spawnRate: 340 }
+            1: { target: 100, contrast: 0.7, largeBallSize: 28, smallBallSize: 9, speed: 3.0, spawnRate: 650, basketWidth: 65, distractorBonus: 0 },
+            2: { target: 100, contrast: 0.65, largeBallSize: 27, smallBallSize: 9, speed: 3.3, spawnRate: 600, basketWidth: 65, distractorBonus: 0 },
+            3: { target: 100, contrast: 0.6, largeBallSize: 26, smallBallSize: 9, speed: 3.6, spawnRate: 550, basketWidth: 65, distractorBonus: 0 },
+            4: { target: 150, contrast: 0.55, largeBallSize: 25, smallBallSize: 9, speed: 4.0, spawnRate: 500, basketWidth: 65, distractorBonus: 0 },
+            5: { target: 150, contrast: 0.5, largeBallSize: 24, smallBallSize: 10, speed: 4.4, spawnRate: 450, basketWidth: 67, distractorBonus: 0 },
+            6: { target: 150, contrast: 0.48, largeBallSize: 23, smallBallSize: 10, speed: 4.8, spawnRate: 420, basketWidth: 67, distractorBonus: 0 },
+            7: { target: 200, contrast: 0.45, largeBallSize: 22, smallBallSize: 10, speed: 5.2, spawnRate: 400, basketWidth: 67, distractorBonus: 0 },
+            8: { target: 200, contrast: 0.42, largeBallSize: 21, smallBallSize: 10, speed: 5.6, spawnRate: 380, basketWidth: 69, distractorBonus: 1 },
+            9: { target: 200, contrast: 0.4, largeBallSize: 20, smallBallSize: 11, speed: 6.0, spawnRate: 360, basketWidth: 69, distractorBonus: 1 },
+            10: { target: 250, contrast: 0.5, largeBallSize: 20, smallBallSize: 11, speed: 6.5, spawnRate: 340, basketWidth: 70, distractorBonus: 2 }
         };
 
         function getLevelConfig() {
@@ -392,6 +487,8 @@
         }
 
         function updateBalls() {
+            if (gameState.paused) return;
+            
             for (let i = balls.length - 1; i >= 0; i--) {
                 const ball = balls[i];
                 ball.y += ball.speed;
@@ -421,6 +518,8 @@
         }
 
         function updateBasket() {
+            if (gameState.paused) return;
+            
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
                 basket.x = Math.max(basket.width/2 + 5, basket.x - basket.speed);
             }
@@ -438,7 +537,8 @@
 
         function completeLevel() {
             gameState.running = false;
-            const levelTime = ((Date.now() - gameState.levelStartTime) / 1000).toFixed(1);
+            gameState.paused = false;
+            const levelTime = ((Date.now() - gameState.levelStartTime - gameState.pausedTime) / 1000).toFixed(1);
             
             const levelAccuracy = gameState.hits + gameState.misses > 0 
                 ? Math.round((gameState.hits / (gameState.hits + gameState.misses)) * 100) 
@@ -466,12 +566,19 @@
             gameState.score = 0;
             gameState.hits = 0;
             gameState.misses = 0;
+            gameState.pausedTime = 0;
+            
+            // Update basket width based on level
+            const config = getLevelConfig();
+            basket.width = config.basketWidth;
             
             gameState.levelStartTime = Date.now();
             balls.length = 0;
             lastSpawnTime = Date.now();
             gameState.running = true;
+            gameState.paused = false;
             updateDisplay();
+            updatePauseButton();
             
             gameLoop();
         }
@@ -556,7 +663,13 @@
             document.getElementById('level').textContent = gameState.level;
             document.getElementById('score').textContent = gameState.score;
             document.getElementById('levelTarget').textContent = config.target;
-            document.getElementById('time').textContent = Math.floor((Date.now() - gameState.levelStartTime) / 1000);
+            
+            const currentTime = gameState.paused 
+                ? gameState.pauseStartTime 
+                : Date.now();
+            const elapsedTime = currentTime - gameState.levelStartTime - gameState.pausedTime;
+            document.getElementById('time').textContent = Math.floor(elapsedTime / 1000);
+            
             const accuracy = gameState.hits + gameState.misses > 0 
                 ? Math.round((gameState.hits / (gameState.hits + gameState.misses)) * 100) 
                 : 0;
@@ -569,11 +682,23 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            updateBasket();
-            updateBalls();
+            if (!gameState.paused) {
+                updateBasket();
+                updateBalls();
+            }
             
             drawBasket();
             balls.forEach(ball => drawBall(ball));
+            
+            // Draw PAUSED overlay
+            if (gameState.paused) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffaa00';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('⏸ PAUSED', canvas.width / 2, canvas.height / 2);
+            }
             
             requestAnimationFrame(gameLoop);
         }
@@ -585,18 +710,28 @@
                 return;
             }
             
-            const now = Date.now();
-            const config = getLevelConfig();
-            
-            if (now - lastSpawnTime > config.spawnRate) {
-                const type = Math.random() < 0.35 ? 'large' : 'small';
-                balls.push(createBall(type));
+            if (!gameState.paused) {
+                const now = Date.now();
+                const config = getLevelConfig();
                 
-                if (Math.random() < 0.4) {
-                    balls.push(createBall('small'));
+                if (now - lastSpawnTime > config.spawnRate) {
+                    const type = Math.random() < 0.35 ? 'large' : 'small';
+                    balls.push(createBall(type));
+                    
+                    // Base distractor spawn chance
+                    if (Math.random() < 0.4) {
+                        balls.push(createBall('small'));
+                    }
+                    
+                    // Add extra distractors based on level (levels 8+)
+                    for (let i = 0; i < config.distractorBonus; i++) {
+                        if (Math.random() < 0.5) {
+                            balls.push(createBall('small'));
+                        }
+                    }
+                    
+                    lastSpawnTime = now;
                 }
-                
-                lastSpawnTime = now;
             }
             
             requestAnimationFrame(spawnBalls);
@@ -605,6 +740,10 @@
         // Controls
         window.addEventListener('keydown', (e) => { 
             keys[e.key] = true;
+            // Spacebar for pause
+            if (e.key === ' ' && gameState.running) {
+                togglePause();
+            }
             e.preventDefault();
         });
         window.addEventListener('keyup', (e) => { 
@@ -613,13 +752,13 @@
         });
 
         canvas.addEventListener('mousemove', (e) => {
-            if (gameState.running) {
+            if (gameState.running && !gameState.paused) {
                 basket.x = e.clientX;
             }
         });
 
         canvas.addEventListener('touchmove', (e) => {
-            if (gameState.running) {
+            if (gameState.running && !gameState.paused) {
                 e.preventDefault();
                 const touch = e.touches[0];
                 basket.x = touch.clientX;
@@ -627,7 +766,7 @@
         }, { passive: false });
 
         canvas.addEventListener('touchstart', (e) => {
-            if (gameState.running) {
+            if (gameState.running && !gameState.paused) {
                 e.preventDefault();
                 const touch = e.touches[0];
                 basket.x = touch.clientX;
@@ -635,17 +774,75 @@
         }, { passive: false });
 
         setInterval(() => {
-            if (gameState.running) updateDisplay();
+            if (gameState.running && !gameState.paused) updateDisplay();
         }, 100);
+
+        // Pause/Resume functionality
+        function togglePause() {
+            if (!gameState.running) return;
+            
+            gameState.paused = !gameState.paused;
+            
+            if (gameState.paused) {
+                gameState.pauseStartTime = Date.now();
+            } else {
+                gameState.pausedTime += Date.now() - gameState.pauseStartTime;
+                lastSpawnTime = Date.now(); // Reset spawn timer
+            }
+            
+            updatePauseButton();
+        }
+
+        function updatePauseButton() {
+            const pauseBtn = document.querySelector('.control-btn.pause');
+            if (gameState.paused) {
+                pauseBtn.textContent = '▶ RESUME';
+            } else {
+                pauseBtn.textContent = '⏸ PAUSE';
+            }
+        }
+
+        // Restart functionality with custom dialog
+        function confirmRestart() {
+            if (!gameState.running) return;
+            
+            // Pause game and show confirmation
+            const wasPaused = gameState.paused;
+            if (!wasPaused) {
+                togglePause();
+            }
+            
+            document.getElementById('restartConfirm').style.display = 'block';
+        }
+
+        function doRestart() {
+            document.getElementById('restartConfirm').style.display = 'none';
+            location.reload();
+        }
+
+        function cancelRestart() {
+            document.getElementById('restartConfirm').style.display = 'none';
+            // Resume if game was running
+            if (gameState.paused && gameState.running) {
+                togglePause();
+            }
+        }
 
         function startGame() {
             basket.x = canvas.width / 2;
-            basket.y = canvas.height * 0.85; // Use percentage for consistency
+            basket.y = canvas.height * 0.85;
+            
+            // Set initial basket width
+            const config = getLevelConfig();
+            basket.width = config.basketWidth;
             
             gameState.running = true;
+            gameState.paused = false;
+            gameState.pausedTime = 0;
             gameState.levelStartTime = Date.now();
             gameState.totalStartTime = Date.now();
             updateDisplay();
+            updatePauseButton();
             gameLoop();
             spawnBalls();
         }
