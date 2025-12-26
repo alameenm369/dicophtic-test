@@ -35,23 +35,67 @@
             align-items: center;
             z-index: 1000;
             padding: 20px;
+            overflow-y: auto;
         }
         #setupScreen.hidden {
             display: none;
         }
         .setup-container {
             background: #1a1a1a;
-            padding: 30px;
+            padding: 25px;
             border-radius: 10px;
             border: 2px solid #00ff00;
             text-align: center;
             max-width: 600px;
             width: 90%;
+            margin: 20px 0;
         }
         .setup-container h1 {
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 20px;
             color: #00ff00;
+        }
+        .form-section {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-section label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 8px;
+        }
+        .form-section input[type="text"],
+        .form-section input[type="number"],
+        .form-section select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #666;
+            border-radius: 5px;
+            background: #1a1a1a;
+            color: #fff;
+            margin-bottom: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .form-section select {
+            cursor: pointer;
+        }
+        .form-section input:focus,
+        .form-section select:focus {
+            outline: none;
+            border-color: #00ff00;
+        }
+        .error-message {
+            color: #ff4444;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
         }
         .instructions {
             background: #2a2a2a;
@@ -61,23 +105,52 @@
             text-align: left;
         }
         .instructions p {
-            font-size: 14px;
-            line-height: 1.8;
-            margin: 5px 0;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 4px 0;
+        }
+        .participant-info {
+            background: #1a3a1a;
+            padding: 12px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 2px solid #00ff00;
+        }
+        .participant-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #2a4a2a;
+        }
+        .participant-info-row:last-child {
+            border-bottom: none;
+        }
+        .participant-info-label {
+            color: #888;
+            font-weight: bold;
+        }
+        .participant-info-value {
+            color: #00ff00;
+            font-weight: bold;
         }
         #startBtn {
             margin-top: 20px;
-            padding: 20px 60px;
-            font-size: 24px;
+            padding: 18px 50px;
+            font-size: 20px;
             cursor: pointer;
             background: #00ff00;
             color: #000;
             border: none;
             border-radius: 5px;
             font-weight: bold;
+            width: 100%;
         }
         #startBtn:hover {
             background: #00cc00;
+        }
+        #startBtn:active {
+            background: #009900;
         }
         #gameCanvas {
             display: block;
@@ -294,16 +367,60 @@
                 <p><strong>📋 HOW TO PLAY:</strong></p>
                 <p>🔴 <strong>Catch LARGE RED balls</strong> = +10 points</p>
                 <p>⚠️ <strong>Avoid small balls</strong> (red/blue) = -8 points</p>
-                <p>🎯 Reach the target score to advance</p>
-                <p>⏱️ Complete all 10 levels</p>
+                <p>🎯 Reach target score to advance • ⏱️ Complete all 10 levels</p>
                 <p></p>
-                <p><strong>🎮 CONTROLS:</strong></p>
-                <p>🖱️ <strong>Mouse:</strong> Move to control basket</p>
-                <p>⌨️ <strong>Keyboard:</strong> Arrow Keys or A/D</p>
-                <p>📱 <strong>Mobile:</strong> Touch and drag</p>
-                <p></p>
-                <p><strong>⚠️ IMPORTANT:</strong></p>
-                <p>📸 Take screenshot of final results!</p>
+                <p><strong>🎮 CONTROLS:</strong> Mouse / Arrow Keys / A-D / Touch</p>
+            </div>
+
+            <div class="form-section">
+                <label>Name: *</label>
+                <input type="text" id="participantName" placeholder="Enter your name" required>
+                <span class="error-message" id="nameError">Please enter your name</span>
+            </div>
+
+            <div class="form-section">
+                <label>Age: *</label>
+                <input type="number" id="participantAge" placeholder="Enter your age" min="1" max="120" required>
+                <span class="error-message" id="ageError">Please enter a valid age</span>
+            </div>
+
+            <div class="form-section">
+                <label>Gender: *</label>
+                <select id="participantGender" required>
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+                <span class="error-message" id="genderError">Please select your gender</span>
+            </div>
+
+            <div class="form-section">
+                <label>Eye Condition: *</label>
+                <select id="participantEyeCondition" required>
+                    <option value="">-- Select Eye Condition --</option>
+                    <option value="Normal vision">Normal vision</option>
+                    <option value="Reduced vision in one eye">Reduced vision in one eye</option>
+                    <option value="Reduced vision in both eyes">Reduced vision in both eyes</option>
+                    <option value="Uses glasses or contact lenses">Uses glasses or contact lenses</option>
+                    <option value="Other vision difficulty">Other vision difficulty</option>
+                    <option value="Prefer not to say/unsure">Prefer not to say/unsure</option>
+                </select>
+                <span class="error-message" id="eyeError">Please select your eye condition</span>
+            </div>
+
+            <div class="form-section">
+                <label>Gaming Experience: *</label>
+                <select id="participantGamingExp" required>
+                    <option value="">-- Select Gaming Experience --</option>
+                    <option value="Never">Never</option>
+                    <option value="Rarely">Rarely</option>
+                    <option value="Occasionally">Occasionally</option>
+                    <option value="Regularly">Regularly</option>
+                    <option value="Very frequently">Very frequently</option>
+                </select>
+                <span class="error-message" id="gamingError">Please select your gaming experience</span>
             </div>
             
             <button id="startBtn">START GAME</button>
@@ -380,6 +497,15 @@
             height: 28,
             speed: 8
         };
+        
+        // Participant information storage
+        const participantInfo = {
+            name: '',
+            age: '',
+            gender: '',
+            eyeCondition: '',
+            gamingExperience: ''
+        };
 
         const balls = [];
         const keys = {};
@@ -398,6 +524,74 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
+
+        // Form validation and submission
+        startBtn.addEventListener('click', () => {
+            if (validateForm()) {
+                collectParticipantInfo();
+                setupScreen.classList.add('hidden');
+                startGame();
+            }
+        });
+
+        function validateForm() {
+            let isValid = true;
+
+            // Validate name
+            const name = document.getElementById('participantName').value.trim();
+            if (name === '') {
+                document.getElementById('nameError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('nameError').style.display = 'none';
+            }
+
+            // Validate age
+            const age = document.getElementById('participantAge').value;
+            if (age === '' || age < 1 || age > 120) {
+                document.getElementById('ageError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('ageError').style.display = 'none';
+            }
+
+            // Validate gender
+            const gender = document.getElementById('participantGender').value;
+            if (gender === '') {
+                document.getElementById('genderError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('genderError').style.display = 'none';
+            }
+
+            // Validate eye condition
+            const eyeCondition = document.getElementById('participantEyeCondition').value;
+            if (eyeCondition === '') {
+                document.getElementById('eyeError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('eyeError').style.display = 'none';
+            }
+
+            // Validate gaming experience
+            const gamingExp = document.getElementById('participantGamingExp').value;
+            if (gamingExp === '') {
+                document.getElementById('gamingError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('gamingError').style.display = 'none';
+            }
+
+            return isValid;
+        }
+
+        function collectParticipantInfo() {
+            participantInfo.name = document.getElementById('participantName').value.trim();
+            participantInfo.age = document.getElementById('participantAge').value;
+            participantInfo.gender = document.getElementById('participantGender').value;
+            participantInfo.eyeCondition = document.getElementById('participantEyeCondition').value;
+            participantInfo.gamingExperience = document.getElementById('participantGamingExp').value;
+        }
 
         startBtn.addEventListener('click', () => {
             setupScreen.classList.add('hidden');
@@ -584,6 +778,9 @@
         }
 
         function completeSession() {
+            gameState.running = false;
+            gameState.paused = false;
+            
             const totalTime = ((Date.now() - gameState.totalStartTime) / 1000);
             const minutes = Math.floor(totalTime / 60);
             const seconds = (totalTime % 60).toFixed(1);
@@ -613,6 +810,7 @@
             }
             levelTimesHTML += '</div>';
             
+            // Build comprehensive results screen with participant info
             document.getElementById('sessionComplete').innerHTML = `
                 <div class="complete-title">🎯 SESSION COMPLETE! 🎯</div>
                 
@@ -620,8 +818,32 @@
                     📸 TAKE SCREENSHOT NOW 📸
                 </div>
                 
+                <div class="participant-info">
+                    <h3 style="color: #00ff00; margin-bottom: 10px; font-size: 18px;">👤 PARTICIPANT INFORMATION</h3>
+                    <div class="participant-info-row">
+                        <span class="participant-info-label">Name:</span>
+                        <span class="participant-info-value">${participantInfo.name || 'N/A'}</span>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-info-label">Age:</span>
+                        <span class="participant-info-value">${participantInfo.age || 'N/A'} years</span>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-info-label">Gender:</span>
+                        <span class="participant-info-value">${participantInfo.gender || 'N/A'}</span>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-info-label">Eye Condition:</span>
+                        <span class="participant-info-value">${participantInfo.eyeCondition || 'N/A'}</span>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-info-label">Gaming Experience:</span>
+                        <span class="participant-info-value">${participantInfo.gamingExperience || 'N/A'}</span>
+                    </div>
+                </div>
+                
                 <div class="results-table">
-                    <h2 style="color: #ffaa00; margin-bottom: 10px; font-size: 20px;">📊 YOUR RESULTS</h2>
+                    <h2 style="color: #ffaa00; margin-bottom: 10px; font-size: 20px;">📊 GAME RESULTS</h2>
                     
                     <div class="results-row">
                         <span class="results-label">Session Time:</span>
@@ -737,8 +959,14 @@
             requestAnimationFrame(spawnBalls);
         }
 
-        // Controls
-        window.addEventListener('keydown', (e) => { 
+        // Controls - DON'T prevent default on input fields
+        window.addEventListener('keydown', (e) => {
+            // Don't capture keys when typing in input fields
+            const activeElement = document.activeElement;
+            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT') {
+                return; // Allow normal input behavior
+            }
+            
             keys[e.key] = true;
             // Spacebar for pause
             if (e.key === ' ' && gameState.running) {
@@ -746,7 +974,13 @@
             }
             e.preventDefault();
         });
-        window.addEventListener('keyup', (e) => { 
+        window.addEventListener('keyup', (e) => {
+            // Don't capture keys when typing in input fields
+            const activeElement = document.activeElement;
+            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT') {
+                return; // Allow normal input behavior
+            }
+            
             keys[e.key] = false;
             e.preventDefault();
         });
